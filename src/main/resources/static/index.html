@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Estoque de Veículos</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .form-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 9px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        button.btn-danger { background-color: #dc3545; }
+        button.btn-danger:hover { background-color: #c82333; }
+        button.btn-warning { background-color: #ffc107; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+        tr:hover { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚗 Gerenciador de Estoque</h1>
+
+    <!-- Formulário de Cadastro -->
+    <div class="form-group">
+        <select id="marcaId">
+            <option value="">Marca</option>
+            <option value="1">Toyota</option>
+            <option value="2">Honda</option>
+            <option value="3">Volkswagen</option>
+            <option value="4">Ford</option>
+            <option value="5">Chevrolet</option>
+        </select>
+        <select id="modeloId">
+            <option value="">Modelo</option>
+            <option value="1">Corolla</option>
+            <option value="2">Hilux</option>
+            <option value="3">Civic</option>
+            <option value="4">HR-V</option>
+            <option value="5">Golf</option>
+            <option value="6">Polo</option>
+            <option value="7">Ka</option>
+            <option value="8">Ranger</option>
+            <option value="9">Onix</option>
+            <option value="10">Tracker</option>
+        </select>
+        <input type="number" id="anoFabricacao" placeholder="Ano">
+        <input type="text" id="cor" placeholder="Cor">
+        <input type="number" id="preco" placeholder="Preço (ex: 150000)">
+        <input type="number" id="quilometragem" placeholder="KM">
+        <select id="status">
+            <option value="DISPONIVEL">Disponível</option>
+            <option value="RESERVADO">Reservado</option>
+            <option value="VENDIDO">Vendido</option>
+        </select>
+        <button onclick="cadastrarVeiculo()">Cadastrar</button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="form-group">
+        <h3 style="width: 100%; margin: 0; font-size: 16px;">Filtrar:</h3>
+        <input type="number" id="filtroAno" placeholder="Filtrar por Ano" onkeyup="carregarVeiculos()">
+        <select id="filtroStatus" onchange="carregarVeiculos()">
+            <option value="">Todos os Status</option>
+            <option value="DISPONIVEL">Disponível</option>
+            <option value="RESERVADO">Reservado</option>
+            <option value="VENDIDO">Vendido</option>
+        </select>
+    </div>
+
+    <!-- Tabela -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Ano</th>
+                <th>Cor</th>
+                <th>Preço</th>
+                <th>KM</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaVeiculos">
+            <!-- Dados inseridos via JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Função para listar os veículos (GET)
+    async function carregarVeiculos() {
+        const ano = document.getElementById('filtroAno').value;
+        const status = document.getElementById('filtroStatus').value;
+        
+        let url = 'http://localhost:8080/api/veiculos';
+        const params = new URLSearchParams();
+        if (ano) params.append('ano', ano);
+        if (status) params.append('status', status);
+        if (params.toString()) url += '?' + params.toString();
+
+        const response = await fetch(url);
+        const veiculos = await response.json();
+
+        const tbody = document.getElementById('tabelaVeiculos');
+        tbody.innerHTML = '';
+
+        veiculos.forEach(v => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${v.id}</td>
+                    <td>${v.marca}</td>
+                    <td>${v.modelo}</td>
+                    <td>${v.anoFabricacao}</td>
+                    <td>${v.cor}</td>
+                    <td>R$ ${v.preco.toFixed(2)}</td>
+                    <td>${v.quilometragem}</td>
+                    <td><strong>${v.status}</strong></td>
+                    <td>
+                        <button class="btn-warning" onclick="venderVeiculo(${v.id})">Marcar Vendido</button>
+                        <button class="btn-danger" onclick="removerVeiculo(${v.id})">Excluir</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // Função para cadastrar (POST)
+    async function cadastrarVeiculo() {
+        const veiculo = {
+            marcaId: parseInt(document.getElementById('marcaId').value),
+            modeloId: parseInt(document.getElementById('modeloId').value),
+            anoFabricacao: parseInt(document.getElementById('anoFabricacao').value),
+            cor: document.getElementById('cor').value,
+            preco: parseFloat(document.getElementById('preco').value),
+            quilometragem: parseInt(document.getElementById('quilometragem').value),
+            status: document.getElementById('status').value
+        };
+
+        const response = await fetch('http://localhost:8080/api/veiculos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(veiculo)
+        });
+
+        if (response.ok) {
+            alert('Veículo cadastrado com sucesso!');
+            carregarVeiculos();
+        } else {
+            alert('Erro ao cadastrar. Verifique os dados.');
+        }
+    }
+
+    // Função para remover (DELETE) - Requisito da faculdade
+    async function removerVeiculo(id) {
+        if (confirm('Tem certeza que deseja remover este veículo do estoque?')) {
+            await fetch(`http://localhost:8080/api/veiculos/${id}`, { method: 'DELETE' });
+            carregarVeiculos();
+        }
+    }
+
+    // Função para marcar como vendido (PUT) - Requisito da faculdade
+    async function venderVeiculo(id) {
+        // 1. Busca os dados atuais do carro no banco
+        const res = await fetch(`http://localhost:8080/api/veiculos/${id}`);
+        const v = await res.json();
+        
+        // 2. Monta o JSON para atualizar, mudando apenas o status para VENDIDO
+        const veiculoAtualizado = {
+            marcaId: v.marcaId,
+            modeloId: v.modeloId,
+            anoFabricacao: v.anoFabricacao,
+            cor: v.cor,
+            preco: v.preco,
+            quilometragem: v.quilometragem,
+            status: 'VENDIDO'
+        };
+
+        // 3. Envia o PUT para a sua API
+        await fetch(`http://localhost:8080/api/veiculos/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(veiculoAtualizado)
+        });
+
+        alert('Veículo atualizado para VENDIDO!');
+        carregarVeiculos(); // Recarrega a tabela para atualizar a tela
+    }
+
+    // Inicia a tabela ao abrir a página
+    window.onload = carregarVeiculos;
+</script>
+
+</body>
+</html>
