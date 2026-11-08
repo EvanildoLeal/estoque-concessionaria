@@ -23,4 +23,8 @@ Sistema CRUD completo para gestão de concessionária, desenvolvido como projeto
 5. Acesse no navegador: `http://localhost:8080`
 
 ---
+spring.datasource.url=jdbc:mysql://localhost:3306/concessionaria?useSSL=false&serverTimezone=America/Sao_Paulo&allowPublicKeyRetrieval=true
+spring.datasource.username=root
+spring.datasource.password=root
+---
 Desenvolvido por **Evanildo Leal** 🎓
